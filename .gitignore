@@ -1,0 +1,85 @@
+# Python compiled files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.pyo
+*.pyd
+
+# Environment files
+*.env
+.env.*
+
+# Virtual environment directories
+env/
+venv/
+ENV/
+VENV/
+
+# Django static and media files
+staticfiles/
+media/
+
+# Database files
+*.sqlite3
+*.db
+
+# Django migration files
+**/migrations/*.pyc
+**/migrations/*.py[cod]
+**/migrations/__pycache__/
+**/migrations/[!__init__]*.py
+
+# IDE settings (e.g., VSCode, PyCharm)
+.vscode/
+.idea/
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# Test coverage and reports
+htmlcov/
+.coverage
+.coverage.*
+.cache/
+*.cover
+*.log
+*.sql
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.tox/
+.pytest_cache/
+.jupyter/
+.ipynb_checkpoints/
+
+# Build and distribution folders
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Docker-related files
+*.log
+docker-compose.override.yml
+__pycache__/
+
+# Node modules (if using Node.js/JavaScript tools)
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# Celery beat schedule file
+celerybeat-schedule
+
+# Local settings
+local_settings.py
+settings_local.py
+settings/*.local
