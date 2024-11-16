@@ -38,7 +38,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework.authtoken',
     'backend.webshop',
+    'corsheaders',
+    'django_otp',
+    'django_otp.plugins.otp_totp'
 ]
 
 REST_FRAMEWORK = {
@@ -54,7 +58,24 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware'
 ]
+
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:3000',
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:3000',
+]
+CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_NAME = 'csrftoken'
+#change below to true if production is on HTTPS
+CSRF_COOKIE_SECURE = False
+
+LOGIN_REDIRECT_URL = '/verify-totp/'
 
 ROOT_URLCONF = 'backend.urls'
 
@@ -86,6 +107,8 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+AUTH_USER_MODEL = 'webshop.Account'
 
 
 # Password validation
