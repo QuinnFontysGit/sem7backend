@@ -83,3 +83,8 @@ celerybeat-schedule
 local_settings.py
 settings_local.py
 settings/*.local
+
+# Certificates
+ssl
+localhost-key.pem
+localhost-cert.pem

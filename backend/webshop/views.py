@@ -9,6 +9,8 @@ from django.http import JsonResponse
 from django_otp.plugins.otp_totp.models import TOTPDevice
 from rest_framework.decorators import api_view
 from django.views.decorators.csrf import ensure_csrf_cookie
+from django.contrib.auth import authenticate, login, logout
+from rest_framework.response import Response
 
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
@@ -17,6 +19,11 @@ class ProductViewSet(viewsets.ModelViewSet):
 class CartViewSet(viewsets.ModelViewSet):
     queryset = Cart.objects.all()
     serializer_class = CartSerializer
+
+@api_view(['POST'])
+def logout_view(request):
+    logout(request)
+    return Response({"message": "Logged out successfully!"}, status=200)
 
 @api_view(['POST'])
 def register_user(request):
@@ -44,13 +51,15 @@ def register_user(request):
 
         return JsonResponse({"qr_code": qr_code_data_uri, "user_id": user.id})
 
+@api_view(['POST'])
 def verify_totp_setup(request):
     if request.method == "POST":
-        user_id = request.data.get("user_id")
+        user_id = request.data.get("userId")
         otp = request.data.get("otp")
 
         try:
             user = Account.objects.get(id=user_id)
+            print(user.first_name)
         except Account.DoesNotExist:
             return JsonResponse({"error": "User not found."}, status=404)
 
@@ -69,3 +78,25 @@ def verify_totp_setup(request):
 @ensure_csrf_cookie
 def get_csrf_token(request):
     return JsonResponse({"detail": "CSRF token set!"})
+
+@api_view(['POST'])
+def login_user(request):
+    data = request.data
+    username = data.get('username')
+    password = data.get('password')
+    otp = data.get('otp')  
+
+    user = authenticate(request, username=username, password=password)
+    if user is None:
+        return Response({"error": "Invalid username or password"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        device = TOTPDevice.objects.get(user=user, confirmed=True)
+    except TOTPDevice.DoesNotExist:
+        return Response({"error": "MFA not set up for this account"}, status=status.HTTP_403_FORBIDDEN)
+
+    if not device.verify_token(otp):
+        return Response({"error": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
+
+    login(request, user)
+    return Response({"message": "Login successful", "username": user.username})

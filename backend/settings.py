@@ -42,7 +42,8 @@ INSTALLED_APPS = [
     'backend.webshop',
     'corsheaders',
     'django_otp',
-    'django_otp.plugins.otp_totp'
+    'django_otp.plugins.otp_totp',
+    'django_extensions',
 ]
 
 REST_FRAMEWORK = {
@@ -62,18 +63,23 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:3000',
+    'https://localhost:3000',
 ]
 
 CORS_ALLOW_CREDENTIALS = True
 
+SECURE_SSL_REDIRECT = True
+
 CSRF_TRUSTED_ORIGINS = [
-    'http://localhost:3000',
+    'https://localhost:3000',
 ]
 CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_NAME = 'csrftoken'
-#change below to true if production is on HTTPS
-CSRF_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = True
+SECURE_CSRF_COOKIE = True
+
+SESSION_COOKIE_SAMESITE = 'None'
+SESSION_COOKIE_SECURE = True
 
 LOGIN_REDIRECT_URL = '/verify-totp/'
 
