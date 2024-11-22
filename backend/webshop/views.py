@@ -1,6 +1,7 @@
 from rest_framework import viewsets, status, serializers
-from .models import Product, Cart, Account
-from .serializers import ProductSerializer, CartSerializer
+from rest_framework.exceptions import PermissionDenied, NotFound
+from .models import Product, Cart, Account, CartProduct
+from .serializers import ProductSerializer, CartSerializer, CartProductSerializer
 import qrcode
 import base64
 import qrcode.image.svg
@@ -11,18 +12,40 @@ from rest_framework.decorators import api_view
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.contrib.auth import authenticate, login, logout
 from rest_framework.response import Response
+from django.contrib.auth.models import Group
+from .permissions import IsManagerOrReadOnly, IsCartOwner
+from django_ratelimit.decorators import ratelimit
 
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+    permission_classes = [IsManagerOrReadOnly]
 
 class CartViewSet(viewsets.ModelViewSet):
     queryset = Cart.objects.all()
     serializer_class = CartSerializer
+    
+    def get(self, request, *args, **kwargs):
+        cart = Cart.objects.filter(account__id=self.request.user.id).first()
+
+        if not cart:
+            raise NotFound("No cart found for this user.")
+
+        cartproducts = CartProduct.objects.filter(cart=cart)
+
+        if not cartproducts.exists():
+            return Response({"detail": "Your cart is empty."}, status=200)
+
+        serializer = self.serializer_class(cartproducts, many=True)
+        return Response(serializer.data)
+
+    permission_classes = [IsCartOwner]
 
 @api_view(['POST'])
 def logout_view(request):
     logout(request)
+    if request.session:
+        request.session.flush()
     return Response({"message": "Logged out successfully!"}, status=200)
 
 @api_view(['POST'])
@@ -37,6 +60,11 @@ def register_user(request):
 
         user = Account.objects.create_user(username=username, password=password, email=email,
                                            address=address, first_name=first_name, last_name=last_name)
+        
+        Cart.objects.create(account=user)
+        
+        role = Group.objects.get(name="Customer")
+        user.groups.add(role)
 
         device = TOTPDevice.objects.create(user=user, confirmed=False)
 
@@ -76,6 +104,7 @@ def verify_totp_setup(request):
             return JsonResponse({"error": "Invalid OTP"}, status=400)
 
 @ensure_csrf_cookie
+@ratelimit(key='ip', rate='1000/m', block=False)
 def get_csrf_token(request):
     return JsonResponse({"detail": "CSRF token set!"})
 
@@ -97,6 +126,8 @@ def login_user(request):
 
     if not device.verify_token(otp):
         return Response({"error": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    role = request.user.groups.first().name if request.user.groups.exists() else 'Customer'
 
     login(request, user)
-    return Response({"message": "Login successful", "username": user.username})
+    return Response({"message": "Login successful", "userid": user.id, "role": role})

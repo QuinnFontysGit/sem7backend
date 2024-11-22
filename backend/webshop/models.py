@@ -39,7 +39,7 @@ class Account(AbstractUser, PermissionsMixin):
         return self.first_name
 
 class Cart(models.Model):
-    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="cart")
+    account = models.OneToOneField(Account, on_delete=models.CASCADE, related_name="cart")
     products = models.ManyToManyField(Product, through='CartProduct', related_name='cart_products')
 
 class CartProduct(models.Model):
