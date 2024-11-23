@@ -1,5 +1,5 @@
 from rest_framework import viewsets, status, serializers
-from rest_framework.exceptions import PermissionDenied, NotFound
+from rest_framework.exceptions import PermissionDenied, NotFound, ValidationError
 from .models import Product, Cart, Account, CartProduct
 from .serializers import ProductSerializer, CartSerializer, CartProductSerializer
 import qrcode
@@ -13,7 +13,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.contrib.auth import authenticate, login, logout
 from rest_framework.response import Response
 from django.contrib.auth.models import Group
-from .permissions import IsManagerOrReadOnly, IsCartOwner
+from .permissions import IsManagerOrReadOnly, IsCartOwner, IsCustomer
 from django_ratelimit.decorators import ratelimit
 
 class ProductViewSet(viewsets.ModelViewSet):
@@ -131,3 +131,31 @@ def login_user(request):
 
     login(request, user)
     return Response({"message": "Login successful", "userid": user.id, "role": role})
+
+@api_view(['POST'])
+def add_to_cart(request):
+    if not request.user.is_authenticated:
+        raise PermissionDenied("You are not logged in.")
+    
+    user = request.user
+    product_id = request.data.get('productid')
+    quantity = request.data.get('quantity', 1)
+
+    if not product_id or not isinstance(quantity, int) or quantity <= 0:
+        raise ValidationError("Invalid product provided")
+    
+    try:
+        cart = Cart.objects.get(account__id=user.id)
+    except Cart.DoesNotExist:
+        raise NotFound("You don't have a shopping cart")
+    
+    try:
+        product = Product.objects.get(id=product_id)
+    except Product.DoesNotExist:
+        raise NotFound("Product not found in database")
+    
+    cart_product, created = CartProduct.objects.get_or_create(cart=cart, product=product)
+    cart_product.quantity = cart_product.quantity + quantity
+    cart_product.save()
+
+    return Response({"message": "Product added to cart successfully!"})

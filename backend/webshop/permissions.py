@@ -1,6 +1,10 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS
 from rest_framework.exceptions import PermissionDenied
 
+class IsCustomer(BasePermission):
+    def has_permission(self, request, view):
+        return request.user.groups.filter(name='Customer').exists()
+
 class IsManagerOrReadOnly(BasePermission):
     def has_permission(self, request, view):
         if request.method in SAFE_METHODS:
