@@ -58,8 +58,9 @@ def register_user(request):
         first_name = request.data.get("first_name")
         last_name = request.data.get("last_name")
 
-        user = Account.objects.create_user(username=username, password=password, email=email,
+        user = Account.objects.create_user(username=username, email=email,
                                            address=address, first_name=first_name, last_name=last_name)
+        user.set_password(password)
         
         Cart.objects.create(account=user)
         
